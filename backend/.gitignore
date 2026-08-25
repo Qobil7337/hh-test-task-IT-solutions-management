@@ -1,0 +1,26 @@
+# Dependencies
+/node_modules
+
+# Build output
+/dist
+
+# Generated code
+/src/generated
+/src/schema.gql
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Test coverage
+/coverage
+
+# Logs
+*.log
+npm-debug.log*
+
+# IDE / OS
+/.vscode
+/.idea
+.DS_Store
