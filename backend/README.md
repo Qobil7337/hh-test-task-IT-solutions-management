@@ -112,6 +112,35 @@ npm run prisma:migrate:status
 The initial `init` migration is intentionally empty: it establishes the migration
 baseline before any domain models exist.
 
+## Authentication
+
+Email + password authentication with bcrypt-hashed passwords and JWT access
+tokens ([src/auth/](src/auth/)).
+
+```graphql
+mutation {
+  register(input: { name: "Alice", email: "alice@example.com", password: "secret-password" }) {
+    accessToken
+    user { id email role }
+  }
+}
+
+mutation {
+  login(input: { email: "alice@example.com", password: "secret-password" }) {
+    accessToken
+  }
+}
+
+# Protected — requires the header  Authorization: Bearer <accessToken>
+query { me { id name email role } }
+```
+
+Passwords are stored only as bcrypt hashes; login returns the same error for an
+unknown email and a wrong password (no account enumeration). Protected
+operations use `JwtAuthGuard`, which verifies the token and loads the current
+user (available in resolvers via the `@CurrentUser()` decorator). Role-based
+authorization is not implemented yet.
+
 ## Environment variables
 
 | Variable            | Description                                        | Default       |
@@ -123,6 +152,8 @@ baseline before any domain models exist.
 | `POSTGRES_DB`       | PostgreSQL database name (docker-compose)          | `charityhub`  |
 | `POSTGRES_PORT`     | Host port PostgreSQL is exposed on (docker-compose)| `5432`        |
 | `DATABASE_URL`      | PostgreSQL connection string for Prisma            | —             |
+| `JWT_SECRET`        | Secret for signing JWTs (min 16 chars)             | —             |
+| `JWT_EXPIRES_IN`    | Access token lifetime (e.g. `15m`, `1h`, `7d`)     | `1h`          |
 
 All variables are validated on startup ([src/config/env.validation.ts](src/config/env.validation.ts));
 the app fails fast with a descriptive error if the configuration is invalid.
@@ -150,10 +181,12 @@ prisma/
   migrations/         Prisma migrations (applied via prisma migrate)
 prisma.config.ts      Prisma CLI configuration
 src/
+  auth/               Authentication (register/login, JWT guard, current user)
   campaign/           Campaign module (service, resolver, GraphQL types)
   common/             Shared helpers (money parsing/validation)
   config/             Environment variable validation
   donation/           Donation module (service, resolver, GraphQL types)
+  user/               User module (data access, GraphQL User type)
   health/             Health GraphQL query
   prisma/             PrismaService (PostgreSQL access via driver adapter)
   generated/          Generated Prisma client (git-ignored)

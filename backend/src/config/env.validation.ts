@@ -6,6 +6,8 @@ export interface EnvironmentVariables {
   NODE_ENV: NodeEnv;
   PORT: number;
   DATABASE_URL: string;
+  JWT_SECRET: string;
+  JWT_EXPIRES_IN: string;
 }
 
 export function validateEnv(
@@ -41,6 +43,19 @@ export function validateEnv(
     );
   }
 
+  const jwtSecret = config.JWT_SECRET;
+  if (typeof jwtSecret !== 'string' || jwtSecret.length === 0) {
+    errors.push('JWT_SECRET is required');
+  } else if (jwtSecret.length < 16) {
+    errors.push('JWT_SECRET must be at least 16 characters long');
+  }
+
+  const jwtExpiresIn =
+    typeof config.JWT_EXPIRES_IN === 'string' &&
+    config.JWT_EXPIRES_IN.length > 0
+      ? config.JWT_EXPIRES_IN
+      : '1h';
+
   if (errors.length > 0) {
     throw new Error(`Environment validation failed:\n- ${errors.join('\n- ')}`);
   }
@@ -49,5 +64,7 @@ export function validateEnv(
     NODE_ENV: nodeEnv as NodeEnv,
     PORT: port,
     DATABASE_URL: databaseUrl as string,
+    JWT_SECRET: jwtSecret as string,
+    JWT_EXPIRES_IN: jwtExpiresIn,
   };
 }

@@ -5,12 +5,14 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_PIPE } from '@nestjs/core';
 import { GraphQLModule } from '@nestjs/graphql';
 import { join } from 'node:path';
+import { AuthModule } from './auth/auth.module';
 import { CampaignModule } from './campaign/campaign.module';
 import {
   validateEnv,
   type EnvironmentVariables,
 } from './config/env.validation';
 import { DonationModule } from './donation/donation.module';
+import { UserModule } from './user/user.module';
 import { HealthModule } from './health/health.module';
 import { PrismaModule } from './prisma/prisma.module';
 
@@ -42,6 +44,8 @@ import { PrismaModule } from './prisma/prisma.module';
     }),
     PrismaModule,
     HealthModule,
+    UserModule,
+    AuthModule,
     CampaignModule,
     DonationModule,
   ],
