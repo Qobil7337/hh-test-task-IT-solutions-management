@@ -150,6 +150,7 @@ prisma/
   migrations/         Prisma migrations (applied via prisma migrate)
 prisma.config.ts      Prisma CLI configuration
 src/
+  campaign/           Campaign module (service, resolver, GraphQL types)
   config/             Environment variable validation
   health/             Health GraphQL query
   prisma/             PrismaService (PostgreSQL access via driver adapter)
