@@ -1,14 +1,18 @@
+name: charityhub
+
 services:
   postgres:
     image: postgres:16-alpine
     container_name: charityhub-postgres
     restart: unless-stopped
+    # Credentials are read from .env (docker compose loads it automatically);
+    # the values after :- are fallbacks when a variable is not set.
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-charityhub}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-charityhub}
       POSTGRES_DB: ${POSTGRES_DB:-charityhub}
     ports:
-      - '5432:5432'
+      - '${POSTGRES_PORT:-5432}:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
