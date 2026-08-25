@@ -21,8 +21,9 @@ cp .env.example .env
 # 3. Start PostgreSQL
 docker compose up -d
 
-# 4. Generate the Prisma client
+# 4. Generate the Prisma client and apply migrations
 npm run prisma:generate
+npm run prisma:migrate
 
 # 5. Run the app
 npm run start:dev
@@ -78,6 +79,39 @@ The application connects through Prisma using `DATABASE_URL`, which must match t
 `POSTGRES_*` values. Connectivity is observable in two places: the startup log
 (`Connected to PostgreSQL`) and the `health` query's `database` field.
 
+## Prisma
+
+- [prisma/schema.prisma](prisma/schema.prisma) — data model (domain models arrive in
+  later steps) and client generator. The client is generated into `src/generated/prisma`
+  (git-ignored), so `npm run prisma:generate` must be run after cloning and after
+  every schema change.
+- [prisma.config.ts](prisma.config.ts) — Prisma CLI configuration (schema location,
+  migrations path, datasource URL from `.env`).
+- [src/prisma/prisma.service.ts](src/prisma/prisma.service.ts) — `PrismaService`
+  extends the generated `PrismaClient` and connects to PostgreSQL through the
+  `@prisma/adapter-pg` driver adapter using `DATABASE_URL` from `ConfigService`.
+  It connects on module init and disconnects on shutdown. It is provided by the
+  global `PrismaModule`, so any feature module can inject it.
+
+### Migrations
+
+Migrations live in `prisma/migrations` and are tracked by Prisma in the
+`_prisma_migrations` table.
+
+```bash
+# Create + apply a migration after changing schema.prisma (development)
+npm run prisma:migrate
+
+# Apply pending migrations without generating new ones (production/CI)
+npm run prisma:migrate:deploy
+
+# Show applied/pending migrations
+npm run prisma:migrate:status
+```
+
+The initial `init` migration is intentionally empty: it establishes the migration
+baseline before any domain models exist.
+
 ## Environment variables
 
 | Variable            | Description                                        | Default       |
@@ -103,12 +137,17 @@ the app fails fast with a descriptive error if the configuration is invalid.
 | `npm run lint`            | ESLint (with autofix)                  |
 | `npm run format`          | Prettier                               |
 | `npm run prisma:generate` | Regenerate the Prisma client           |
+| `npm run prisma:migrate`  | Create/apply migrations (development)  |
+| `npm run prisma:migrate:deploy` | Apply pending migrations (production/CI) |
+| `npm run prisma:migrate:status` | Show migration status            |
 | `npm run test:e2e`        | End-to-end tests                       |
 
 ## Project structure
 
 ```
-prisma/               Prisma schema (models arrive in later steps)
+prisma/
+  schema.prisma       Prisma schema (models arrive in later steps)
+  migrations/         Prisma migrations (applied via prisma migrate)
 prisma.config.ts      Prisma CLI configuration
 src/
   config/             Environment variable validation

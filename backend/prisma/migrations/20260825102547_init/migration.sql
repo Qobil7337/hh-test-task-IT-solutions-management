@@ -1,0 +1,4 @@
+-- Initial baseline migration.
+-- Intentionally empty: it establishes the Prisma Migrate workflow
+-- (migrations folder + _prisma_migrations bookkeeping table) before
+-- any domain models exist. Schema changes arrive in later migrations.
