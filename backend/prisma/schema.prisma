@@ -11,3 +11,70 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum CampaignStatus {
+  ACTIVE
+  COMPLETED
+  CLOSED
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(USER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  donations Donation[]
+
+  @@map("users")
+}
+
+model Campaign {
+  id              String         @id @default(uuid()) @db.Uuid
+  title           String
+  description     String
+  // Money is stored as NUMERIC(12, 2) — exact decimal, no floating point.
+  targetAmount    Decimal        @db.Decimal(12, 2)
+  // Denormalized sum of donations, updated transactionally with each donation.
+  collectedAmount Decimal        @default(0) @db.Decimal(12, 2)
+  status          CampaignStatus @default(ACTIVE)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  donations Donation[]
+
+  // Serves "list campaigns by status, newest first" — the primary listing query.
+  @@index([status, createdAt])
+  @@map("campaigns")
+}
+
+model Donation {
+  id        String   @id @default(uuid()) @db.Uuid
+  amount    Decimal  @db.Decimal(12, 2)
+  donorName String
+  createdAt DateTime @default(now())
+
+  // Donations are financial records: campaigns with donations cannot be deleted.
+  campaignId String   @db.Uuid
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Restrict)
+
+  // Optional: anonymous/guest donations have no user. Deleting a user keeps
+  // the donation but detaches it.
+  userId String? @db.Uuid
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // Serves "donations of a campaign, newest first"; also covers the FK,
+  // which PostgreSQL does not index automatically.
+  @@index([campaignId, createdAt])
+  // Serves "donations of a user".
+  @@index([userId])
+  @@map("donations")
+}
