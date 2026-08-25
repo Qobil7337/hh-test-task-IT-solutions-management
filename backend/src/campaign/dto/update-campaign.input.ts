@@ -6,7 +6,7 @@ import {
   Matches,
   MaxLength,
 } from 'class-validator';
-import { DECIMAL_AMOUNT_REGEX } from './create-campaign.input';
+import { DECIMAL_AMOUNT_REGEX } from '../../common/money';
 
 // Deliberately excludes `status` (changed via closeCampaign / donations) and
 // `collectedAmount` (maintained by the donation flow, never set manually).

@@ -151,7 +151,9 @@ prisma/
 prisma.config.ts      Prisma CLI configuration
 src/
   campaign/           Campaign module (service, resolver, GraphQL types)
+  common/             Shared helpers (money parsing/validation)
   config/             Environment variable validation
+  donation/           Donation module (service, resolver, GraphQL types)
   health/             Health GraphQL query
   prisma/             PrismaService (PostgreSQL access via driver adapter)
   generated/          Generated Prisma client (git-ignored)

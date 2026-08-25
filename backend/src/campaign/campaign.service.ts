@@ -1,9 +1,9 @@
 import {
-  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { parsePositiveDecimal } from '../common/money';
 import {
   CampaignStatus,
   Prisma,
@@ -36,7 +36,7 @@ export class CampaignService {
       data: {
         title: input.title,
         description: input.description,
-        targetAmount: this.parseTargetAmount(input.targetAmount),
+        targetAmount: parsePositiveDecimal(input.targetAmount, 'targetAmount'),
       },
     });
   }
@@ -54,7 +54,10 @@ export class CampaignService {
       data.description = input.description;
     }
     if (input.targetAmount !== undefined) {
-      data.targetAmount = this.parseTargetAmount(input.targetAmount);
+      data.targetAmount = parsePositiveDecimal(
+        input.targetAmount,
+        'targetAmount',
+      );
     }
 
     return this.prisma.campaign.update({ where: { id }, data });
@@ -100,20 +103,5 @@ export class CampaignService {
         `Campaign ${campaign.id} is closed and cannot be modified`,
       );
     }
-  }
-
-  private parseTargetAmount(value: string): Prisma.Decimal {
-    let amount: Prisma.Decimal;
-    try {
-      amount = new Prisma.Decimal(value);
-    } catch {
-      throw new BadRequestException(
-        'targetAmount must be a valid decimal number',
-      );
-    }
-    if (amount.lessThanOrEqualTo(0)) {
-      throw new BadRequestException('targetAmount must be greater than zero');
-    }
-    return amount;
   }
 }

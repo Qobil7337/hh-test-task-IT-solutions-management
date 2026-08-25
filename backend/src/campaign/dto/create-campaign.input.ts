@@ -1,7 +1,6 @@
 import { Field, InputType } from '@nestjs/graphql';
 import { IsNotEmpty, IsString, Matches, MaxLength } from 'class-validator';
-
-export const DECIMAL_AMOUNT_REGEX = /^\d{1,10}(\.\d{1,2})?$/;
+import { DECIMAL_AMOUNT_REGEX } from '../../common/money';
 
 @InputType()
 export class CreateCampaignInput {
