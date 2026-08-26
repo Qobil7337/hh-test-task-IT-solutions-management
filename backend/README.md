@@ -112,6 +112,53 @@ npm run prisma:migrate:status
 The initial `init` migration is intentionally empty: it establishes the migration
 baseline before any domain models exist.
 
+### Seeding the database
+
+[prisma/seed.ts](prisma/seed.ts) fills the local database with development data:
+an ADMIN user, a regular USER, three campaigns (one active, one fully funded and
+therefore `COMPLETED`, one `CLOSED`) and seven donations.
+
+```bash
+npm run prisma:seed
+```
+
+`prisma migrate reset` also runs the seed automatically after recreating the
+schema. The seed is **idempotent**: every record has a fixed id (users are
+matched by email) and is upserted, so running it again restores the seeded
+records to their seed state without duplicating them or touching other data.
+Campaign totals are recomputed from the donations in the database.
+
+Passwords are stored as bcrypt hashes. The plaintext values below are
+**development-only** credentials:
+
+| Role  | Email                  | Password    |
+| ----- | ---------------------- | ----------- |
+| ADMIN | `admin@charityhub.dev` | `Admin123!` |
+| USER  | `user@charityhub.dev`  | `User1234!` |
+
+Log in at `http://localhost:3000/graphql`:
+
+```graphql
+# Admin — can manage campaigns
+mutation {
+  login(input: { email: "admin@charityhub.dev", password: "Admin123!" }) {
+    accessToken
+    user { name role }
+  }
+}
+
+# Regular user — can donate and view their own history
+mutation {
+  login(input: { email: "user@charityhub.dev", password: "User1234!" }) {
+    accessToken
+    user { name role }
+  }
+}
+```
+
+Then send the token with protected operations as an HTTP header:
+`Authorization: Bearer <accessToken>`.
+
 ## Authentication
 
 Email + password authentication with bcrypt-hashed passwords and JWT access
