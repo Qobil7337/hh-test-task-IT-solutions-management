@@ -1,0 +1,6 @@
+# Docker Compose environment (copy from .env.example)
+.env
+
+# OS / editor
+.DS_Store
+Thumbs.db

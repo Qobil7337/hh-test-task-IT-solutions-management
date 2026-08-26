@@ -18,8 +18,8 @@ npm install
 # 2. Configure environment variables
 cp .env.example .env
 
-# 3. Start PostgreSQL
-docker compose up -d
+# 3. Start PostgreSQL (docker-compose.yml lives in the repository root)
+docker compose -f ../docker-compose.yml up -d postgres
 
 # 4. Generate the Prisma client and apply migrations
 npm run prisma:generate
@@ -52,14 +52,18 @@ connectivity (`up` / `down`), and `timestamp` is the ISO-8601 time of the check.
 
 ## Database (PostgreSQL)
 
-Local PostgreSQL 16 runs in Docker, defined in [docker-compose.yml](docker-compose.yml).
-Credentials, database name, and port come from the `POSTGRES_*` variables in `.env`
-(Docker Compose loads it automatically); data is persisted in the named Docker
-volume `charityhub_postgres_data`, so it survives container restarts and recreation.
+Local PostgreSQL 16 runs in Docker, defined in the repository-root
+[docker-compose.yml](../docker-compose.yml) (which also defines the backend and
+frontend services). Credentials, database name, and port come from the
+`POSTGRES_*` variables in the root `.env` (see the root `.env.example`); data is
+persisted in the named Docker volume `charityhub_postgres_data`, so it survives
+container restarts and recreation.
+
+Run these from the repository root:
 
 ```bash
-# Start (detached); --wait blocks until the healthcheck passes
-docker compose up -d --wait
+# Start only the database (detached); --wait blocks until the healthcheck passes
+docker compose up -d --wait postgres
 
 # Status and logs
 docker compose ps
@@ -74,6 +78,9 @@ docker compose down
 # Stop and DELETE all data (removes the volume)
 docker compose down -v
 ```
+
+To run the whole stack (database, API, frontend) in containers instead, use
+`docker compose up --build` from the repository root — see the root README.
 
 The application connects through Prisma using `DATABASE_URL`, which must match the
 `POSTGRES_*` values. Connectivity is observable in two places: the startup log
@@ -214,10 +221,6 @@ UPDATE users SET role = 'ADMIN' WHERE email = 'admin@example.com';
 | ------------------- | -------------------------------------------------- | ------------- |
 | `NODE_ENV`          | `development` \| `production` \| `test`            | `development` |
 | `PORT`              | HTTP port the API listens on                       | `3000`        |
-| `POSTGRES_USER`     | PostgreSQL user (docker-compose)                   | `charityhub`  |
-| `POSTGRES_PASSWORD` | PostgreSQL password (docker-compose)               | `charityhub`  |
-| `POSTGRES_DB`       | PostgreSQL database name (docker-compose)          | `charityhub`  |
-| `POSTGRES_PORT`     | Host port PostgreSQL is exposed on (docker-compose)| `5432`        |
 | `DATABASE_URL`      | PostgreSQL connection string for Prisma            | —             |
 | `JWT_SECRET`        | Secret for signing JWTs (min 16 chars)             | —             |
 | `JWT_EXPIRES_IN`    | Access token lifetime (e.g. `15m`, `1h`, `7d`)     | `1h`          |
@@ -258,5 +261,5 @@ src/
   prisma/             PrismaService (PostgreSQL access via driver adapter)
   generated/          Generated Prisma client (git-ignored)
   schema.gql          Generated GraphQL schema (git-ignored)
-docker-compose.yml    Local PostgreSQL
+Dockerfile            API container image (used by the root docker-compose.yml)
 ```

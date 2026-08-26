@@ -16,6 +16,10 @@ campaign pages, all served live by the CharityHub GraphQL API in
 
 ## Running locally
 
+The quickest way is the full stack in Docker from the repository root:
+`docker compose up --build` (frontend on http://localhost:3001). To run the
+frontend from source instead:
+
 1. Start the backend (see the backend README): PostgreSQL via Docker, migrations,
    seed, then `npm run start:dev` — the API listens on `http://localhost:3000/graphql`.
 2. Configure and start the frontend:

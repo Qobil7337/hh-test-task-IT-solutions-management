@@ -1,0 +1,77 @@
+# CharityHub local development environment: PostgreSQL + API + frontend.
+#
+#   docker compose up --build        # everything
+#   docker compose up -d postgres    # database only (run the apps from source)
+#
+# Configuration comes from the root .env file (see .env.example); every
+# variable has a development default, so it also works without one.
+name: charityhub
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-charityhub}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-charityhub}
+      POSTGRES_DB: ${POSTGRES_DB:-charityhub}
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-charityhub}:${POSTGRES_PASSWORD:-charityhub}@postgres:5432/${POSTGRES_DB:-charityhub}?schema=public
+      JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-me-in-production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1h}
+      SEED_DATABASE: ${SEED_DATABASE:-true}
+    ports:
+      - '${BACKEND_PORT:-3000}:3000'
+    # Apply pending migrations, seed development data (idempotent, optional),
+    # then start the API. `$$` passes a literal `$` through to the shell.
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        npx prisma migrate deploy
+        if [ "$$SEED_DATABASE" = "true" ]; then npx prisma db seed; fi
+        exec node dist/main
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:3000/graphql',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({query:'{ health { status } }'})}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      # Server-side requests reach the API over the compose network.
+      GRAPHQL_URL: http://backend:3000/graphql
+    ports:
+      - '${FRONTEND_PORT:-3001}:3001'
+
+volumes:
+  postgres_data:
