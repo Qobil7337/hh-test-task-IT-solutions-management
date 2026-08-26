@@ -138,8 +138,28 @@ query { me { id name email role } }
 Passwords are stored only as bcrypt hashes; login returns the same error for an
 unknown email and a wrong password (no account enumeration). Protected
 operations use `JwtAuthGuard`, which verifies the token and loads the current
-user (available in resolvers via the `@CurrentUser()` decorator). Role-based
-authorization is not implemented yet.
+user (available in resolvers via the `@CurrentUser()` decorator).
+
+### Authorization
+
+Operations are protected with a single composed decorator
+([src/auth/auth.decorator.ts](src/auth/auth.decorator.ts)):
+`@Auth()` requires authentication, `@Auth(Role.ADMIN)` additionally requires a
+role — checked by `RolesGuard` against the user's role in the database.
+
+| Operation                                   | Who               |
+| ------------------------------------------- | ----------------- |
+| `campaigns`, `campaign`, `donations`        | Public            |
+| `register`, `login`                         | Public            |
+| `createDonation`, `myDonations`, `me`       | Authenticated     |
+| `createCampaign`, `updateCampaign`, `closeCampaign`, `deleteCampaign` | ADMIN |
+
+Registration always creates `USER` accounts; admins are provisioned
+out-of-band, e.g. via SQL:
+
+```sql
+UPDATE users SET role = 'ADMIN' WHERE email = 'admin@example.com';
+```
 
 ## Environment variables
 

@@ -104,11 +104,18 @@ describe('DonationService', () => {
 
       const createArgs = (
         tx.donation.create.mock.calls[0] as [
-          { data: { amount: Prisma.Decimal; donorName: string } },
+          {
+            data: {
+              amount: Prisma.Decimal;
+              donorName: string;
+              userId: string | null;
+            };
+          },
         ]
       )[0];
       expect(createArgs.data.amount.toString()).toBe('50');
       expect(createArgs.data.donorName).toBe('Alex');
+      expect(createArgs.data.userId).toBeNull();
 
       const updateArgs = (
         tx.campaign.update.mock.calls[0] as [
@@ -119,6 +126,24 @@ describe('DonationService', () => {
       expect(
         (updateArgs.data.collectedAmount as Prisma.Decimal).toString(),
       ).toBe('150');
+    });
+
+    it('attaches the donating user when a userId is provided', async () => {
+      tx.campaign.findUnique.mockResolvedValue(
+        buildCampaign({ collectedAmount: new Prisma.Decimal('100.00') }),
+      );
+      tx.donation.create.mockResolvedValue({ id: 'd1' });
+      tx.campaign.update.mockResolvedValue(buildCampaign());
+
+      const userId = '2c9a0e6b-1f4d-4b7a-8e3c-5d6f7a8b9c0d';
+      await service.create(buildInput('50.00'), userId);
+
+      const createArgs = (
+        tx.donation.create.mock.calls[0] as [
+          { data: { userId: string | null } },
+        ]
+      )[0];
+      expect(createArgs.data.userId).toBe(userId);
     });
 
     it.each(['0', '0.00', '-5'])(

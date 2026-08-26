@@ -1,5 +1,7 @@
 import { ParseUUIDPipe } from '@nestjs/common';
 import { Args, ID, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Auth } from '../auth/auth.decorator';
+import { Role } from '../generated/prisma/client';
 import { CampaignService } from './campaign.service';
 import { CreateCampaignInput } from './dto/create-campaign.input';
 import { UpdateCampaignInput } from './dto/update-campaign.input';
@@ -22,11 +24,13 @@ export class CampaignResolver {
   }
 
   @Mutation(() => Campaign)
+  @Auth(Role.ADMIN)
   createCampaign(@Args('input') input: CreateCampaignInput): Promise<Campaign> {
     return this.campaignService.create(input);
   }
 
   @Mutation(() => Campaign)
+  @Auth(Role.ADMIN)
   updateCampaign(
     @Args('id', { type: () => ID }, ParseUUIDPipe) id: string,
     @Args('input') input: UpdateCampaignInput,
@@ -35,6 +39,7 @@ export class CampaignResolver {
   }
 
   @Mutation(() => Campaign)
+  @Auth(Role.ADMIN)
   closeCampaign(
     @Args('id', { type: () => ID }, ParseUUIDPipe) id: string,
   ): Promise<Campaign> {
@@ -44,6 +49,7 @@ export class CampaignResolver {
   @Mutation(() => Campaign, {
     description: 'Delete a campaign (only possible while it has no donations)',
   })
+  @Auth(Role.ADMIN)
   deleteCampaign(
     @Args('id', { type: () => ID }, ParseUUIDPipe) id: string,
   ): Promise<Campaign> {

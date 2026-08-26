@@ -27,7 +27,14 @@ export class DonationService {
     });
   }
 
-  async create(input: CreateDonationInput): Promise<Donation> {
+  findByUser(userId: string): Promise<Donation[]> {
+    return this.prisma.donation.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async create(input: CreateDonationInput, userId?: string): Promise<Donation> {
     const amount = parsePositiveDecimal(input.amount, 'amount');
 
     return this.prisma.$transaction(async (tx) => {
@@ -59,6 +66,7 @@ export class DonationService {
           amount,
           donorName: input.donorName,
           campaignId: campaign.id,
+          userId: userId ?? null,
         },
       });
 
