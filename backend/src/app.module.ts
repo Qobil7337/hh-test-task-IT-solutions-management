@@ -32,7 +32,12 @@ import { PrismaModule } from './prisma/prisma.module';
           configService.get('NODE_ENV', { infer: true }) === 'production';
 
         return {
-          autoSchemaFile: join(process.cwd(), 'src', 'schema.gql'),
+          // Development writes the schema to src/schema.gql for inspection.
+          // Production keeps it in memory: serverless filesystems (e.g.
+          // Vercel Functions) are read-only, and the file is never read.
+          autoSchemaFile: isProduction
+            ? true
+            : join(process.cwd(), 'src', 'schema.gql'),
           sortSchema: true,
           introspection: !isProduction,
           playground: false,

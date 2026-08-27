@@ -233,7 +233,7 @@ the app fails fast with a descriptive error if the configuration is invalid.
 | Script                    | Description                            |
 | ------------------------- | -------------------------------------- |
 | `npm run start:dev`       | Start in watch mode                    |
-| `npm run build`           | Compile TypeScript to `dist/`          |
+| `npm run build`           | Generate the Prisma client (`prebuild`), then compile TypeScript to `dist/` |
 | `npm run start:prod`      | Run the compiled build                 |
 | `npm run lint`            | ESLint (with autofix)                  |
 | `npm run format`          | Prettier                               |
