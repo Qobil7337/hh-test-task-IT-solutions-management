@@ -20,8 +20,10 @@ position. The goal was to demonstrate, in a small but realistic codebase:
 - authentication and role-based authorization done the idiomatic NestJS way;
 - meaningful unit and end-to-end tests, and a reproducible local environment.
 
-The frontend is intentionally minimal: it proves the API end to end and serves as
-an online business card; it is not the focus.
+The frontend is deliberately small — it serves as an online business card and is
+not the focus — but it exercises the **entire API**: public campaign pages, a
+sign-in page, an account page with the donation history, and an admin area for
+campaign management (shown to `ADMIN` accounts only).
 
 ## Architecture
 
@@ -98,9 +100,11 @@ campaign total → the page re-renders with fresh data.
 └── frontend/
     ├── Dockerfile
     └── src/
-        ├── app/               pages: /, /campaigns, /campaigns/[id]; Server Actions
-        ├── components/        cards, progress bar, donation and auth forms
-        └── lib/               GraphQL client, typed API calls, cookie helpers
+        ├── app/               pages: /, /campaigns, /campaigns/[id], /login, /account,
+        │                      /admin, /admin/campaigns/new, /admin/campaigns/[id];
+        │                      Server Actions (auth, donations, campaign management)
+        ├── components/        cards, progress bar, forms (auth, donation, campaign), admin actions
+        └── lib/               GraphQL client, typed API calls, session/cookie helpers
 ```
 
 ## Local development
@@ -303,6 +307,14 @@ role as loaded from the database (not from the token), so role changes apply at 
 | `me`, `createDonation`, `myDonations`                                      | Authenticated |
 | `createCampaign`, `updateCampaign`, `closeCampaign`, `deleteCampaign`      | `ADMIN`       |
 
+The frontend mirrors this matrix: visitors see the campaign pages and the sign-in
+page; signed-in users additionally get `/account` (`me` + `myDonations`) and the
+donation form; `ADMIN` accounts additionally get the `/admin` area (`health`,
+`createCampaign`, `updateCampaign`, `closeCampaign`, `deleteCampaign`) and a
+"Manage campaign" link on every campaign page. The UI only decides what to show —
+every protected operation is enforced by the guards above. See
+[`frontend/README.md`](frontend/README.md) for the page-by-page overview.
+
 ## Testing
 
 ```bash
@@ -401,6 +413,6 @@ by the real-database concurrency e2e test described above.
 
 Deliberately out of scope for this test: pagination, refresh tokens / token
 revocation (tokens simply expire), campaign images (the frontend draws a
-deterministic placeholder), an admin UI (campaign management is done through the
-GraphQL sandbox), rate limiting, and a production-hardened (multi-stage) backend
+deterministic placeholder), user management in the UI (admins are provisioned via
+the seed or SQL), rate limiting, and a production-hardened (multi-stage) backend
 image.

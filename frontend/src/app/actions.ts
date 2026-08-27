@@ -2,26 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { field, toErrorState, type ActionState } from "@/lib/action-state";
 import { createDonation, login, register } from "@/lib/api";
 import { getToken, TOKEN_COOKIE } from "@/lib/auth";
-import { GraphQLRequestError } from "@/lib/graphql";
-
-export interface ActionState {
-  error?: string;
-  success?: string;
-}
+import { safeReturnPath } from "@/lib/session";
 
 const TOKEN_MAX_AGE_SECONDS = 60 * 60; // matches the backend's JWT_EXPIRES_IN
-
-function field(formData: FormData, name: string): string {
-  const value = formData.get(name);
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function toErrorState(error: unknown): ActionState {
-  if (error instanceof GraphQLRequestError) return { error: error.message };
-  return { error: "The CharityHub API is unavailable. Please try again." };
-}
 
 async function storeToken(token: string): Promise<void> {
   (await cookies()).set(TOKEN_COOKIE, token, {
@@ -31,6 +18,19 @@ async function storeToken(token: string): Promise<void> {
     path: "/",
     maxAge: TOKEN_MAX_AGE_SECONDS,
   });
+}
+
+/**
+ * Sign-in / sign-out forms may carry a hidden `redirectTo` field naming the
+ * page to open afterwards. Without it the current page simply re-renders with
+ * the new session (the sign-in box on a campaign page works that way).
+ * `redirect` throws, so this runs outside the try/catch around the API call.
+ */
+function finishSessionChange(formData: FormData): ActionState {
+  revalidatePath("/", "layout");
+  const target = field(formData, "redirectTo");
+  if (target) redirect(safeReturnPath(target, "/"));
+  return {};
 }
 
 export async function loginAction(
@@ -43,11 +43,10 @@ export async function loginAction(
       field(formData, "password"),
     );
     await storeToken(accessToken);
-    revalidatePath("/", "layout");
-    return {};
   } catch (error) {
     return toErrorState(error);
   }
+  return finishSessionChange(formData);
 }
 
 export async function registerAction(
@@ -61,16 +60,15 @@ export async function registerAction(
       field(formData, "password"),
     );
     await storeToken(accessToken);
-    revalidatePath("/", "layout");
-    return {};
   } catch (error) {
     return toErrorState(error);
   }
+  return finishSessionChange(formData);
 }
 
-export async function logoutAction(): Promise<void> {
+export async function logoutAction(formData: FormData): Promise<void> {
   (await cookies()).delete(TOKEN_COOKIE);
-  revalidatePath("/", "layout");
+  finishSessionChange(formData);
 }
 
 export async function donateAction(
@@ -91,6 +89,8 @@ export async function donateAction(
     });
     revalidatePath("/campaigns");
     revalidatePath(`/campaigns/${campaignId}`);
+    revalidatePath("/account");
+    revalidatePath("/admin", "layout");
     return { success: `Thank you! Your donation of $${donation.amount} was recorded.` };
   } catch (error) {
     return toErrorState(error);

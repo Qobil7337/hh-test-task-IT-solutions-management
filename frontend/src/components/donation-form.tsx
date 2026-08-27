@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import { donateAction, type ActionState } from "@/app/actions";
+import { donateAction } from "@/app/actions";
+import type { ActionState } from "@/lib/action-state";
 import { formatAmount } from "@/lib/format";
 
 const INITIAL: ActionState = {};

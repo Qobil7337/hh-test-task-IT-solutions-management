@@ -1,9 +1,9 @@
 "use client";
 
-export default function CampaignsError({ reset }: { reset: () => void }) {
+export default function AppError({ reset }: { reset: () => void }) {
   return (
     <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-red-800">
-      <h2 className="font-semibold">Could not load campaigns</h2>
+      <h2 className="font-semibold">Could not load this page</h2>
       <p className="mt-1 text-sm">
         The CharityHub API is not reachable. Make sure the backend is running
         (see the backend README), then try again.

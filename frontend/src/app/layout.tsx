@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
+import { SiteNav } from "@/components/site-nav";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -35,13 +36,23 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <Link href="/" className="font-semibold tracking-tight">
               CharityHub
             </Link>
-            <div className="flex gap-6 text-sm text-zinc-600">
+            <div className="flex flex-wrap items-center justify-end gap-x-6 gap-y-2 text-sm text-zinc-600">
               <Link href="/" className="hover:text-zinc-900">
                 About
               </Link>
               <Link href="/campaigns" className="hover:text-zinc-900">
                 Campaigns
               </Link>
+              <Suspense
+                fallback={
+                  <span
+                    aria-hidden
+                    className="h-4 w-14 animate-pulse rounded bg-zinc-200"
+                  />
+                }
+              >
+                <SiteNav />
+              </Suspense>
             </div>
           </nav>
         </header>

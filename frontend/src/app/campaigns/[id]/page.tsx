@@ -7,9 +7,9 @@ import { DonationForm } from "@/components/donation-form";
 import { LogoutButton } from "@/components/logout-button";
 import { ProgressBar } from "@/components/progress-bar";
 import { StatusBadge } from "@/components/status-badge";
-import { getCampaign, getCurrentUser, getDonations } from "@/lib/api";
-import { getToken } from "@/lib/auth";
+import { getCampaign, getDonations } from "@/lib/api";
 import { formatAmount, formatDate } from "@/lib/format";
+import { getSessionUser } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +34,7 @@ export default async function CampaignDetailsPage({ params }: PageProps) {
 
   const [donations, user] = await Promise.all([
     getDonations(campaign.id),
-    getCurrentUser(await getToken()),
+    getSessionUser(),
   ]);
   const recentDonations = donations.slice(0, RECENT_DONATIONS_LIMIT);
   const remaining = (
@@ -62,6 +62,14 @@ export default async function CampaignDetailsPage({ params }: PageProps) {
               {campaign.title}
             </h1>
             <StatusBadge status={campaign.status} />
+            {user?.role === "ADMIN" && (
+              <Link
+                href={`/admin/campaigns/${campaign.id}`}
+                className="ml-auto text-sm font-medium text-amber-800 underline underline-offset-4"
+              >
+                Manage campaign
+              </Link>
+            )}
           </div>
           <p className="mt-2 text-sm text-zinc-500">
             Created {formatDate(campaign.createdAt)}
@@ -148,6 +156,14 @@ export default async function CampaignDetailsPage({ params }: PageProps) {
                 defaultDonorName={user.name}
                 remaining={remaining}
               />
+              <p className="mt-4 text-xs text-zinc-500">
+                <Link
+                  href="/account"
+                  className="underline underline-offset-2 hover:text-zinc-900"
+                >
+                  Your donation history →
+                </Link>
+              </p>
             </>
           ) : (
             <>

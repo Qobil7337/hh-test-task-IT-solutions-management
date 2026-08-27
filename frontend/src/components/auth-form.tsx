@@ -1,14 +1,26 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { loginAction, registerAction, type ActionState } from "@/app/actions";
+import { loginAction, registerAction } from "@/app/actions";
+import type { ActionState } from "@/lib/action-state";
 
 const INITIAL: ActionState = {};
 
 const inputClass =
   "mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 focus:border-zinc-900 focus:outline-none";
 
-export function AuthForm() {
+// Development credentials created by the backend seed (see the README).
+const DEMO_ACCOUNTS = [
+  { role: "User", email: "user@charityhub.dev", password: "User1234!" },
+  { role: "Admin", email: "admin@charityhub.dev", password: "Admin123!" },
+];
+
+export function AuthForm({
+  redirectTo,
+}: {
+  /** Page to open after a successful sign-in; omit to stay on the current page. */
+  redirectTo?: string;
+}) {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [loginState, login, loginPending] = useActionState(
     loginAction,
@@ -43,6 +55,9 @@ export function AuthForm() {
       </div>
 
       <form action={isLogin ? login : register} className="mt-4 space-y-4">
+        {redirectTo && (
+          <input type="hidden" name="redirectTo" value={redirectTo} />
+        )}
         {!isLogin && (
           <label className="block text-sm">
             <span className="font-medium text-zinc-700">Name</span>
@@ -80,11 +95,18 @@ export function AuthForm() {
         </button>
       </form>
 
-      <p className="mt-4 text-xs text-zinc-500">
-        Demo account (seeded database):{" "}
-        <code className="rounded bg-zinc-100 px-1">user@charityhub.dev</code> /{" "}
-        <code className="rounded bg-zinc-100 px-1">User1234!</code>
-      </p>
+      <div className="mt-4 text-xs text-zinc-500">
+        <p>Demo accounts (seeded database):</p>
+        <ul className="mt-1 space-y-1">
+          {DEMO_ACCOUNTS.map((account) => (
+            <li key={account.email}>
+              {account.role}:{" "}
+              <code className="rounded bg-zinc-100 px-1">{account.email}</code> /{" "}
+              <code className="rounded bg-zinc-100 px-1">{account.password}</code>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
